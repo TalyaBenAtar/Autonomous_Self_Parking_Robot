@@ -4,6 +4,11 @@ import robot_control.hardware as hardware
 import robot_control.motion_control as motion_control
 import config
 
+# Test the color sensor readings
+def test_color_sensor():
+    while True:
+        print(hardware.color_sensor.reflection())
+        wait(200)
 
 def read_line_reflection():
     """
@@ -63,6 +68,8 @@ def follow_line():
 
     left_speed = -config.DRIVE_SPEED + correction
     right_speed = -config.DRIVE_SPEED - correction
+
+    print("ref:", reflection, "corr:", correction, "L:", left_speed, "R:", right_speed)
 
     motion_control.drive(left_speed, right_speed)
 

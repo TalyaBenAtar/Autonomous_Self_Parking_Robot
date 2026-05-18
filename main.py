@@ -19,10 +19,11 @@ import states.line_following as line_following
 def main():
     hardware.ev3.speaker.beep()
     line_following.follow_line_for_testing()
-
+    # line_following.test_color_sensor()
 
     while True:
         # state 1 - line following
+        # line_following.prepare_for_line_following()
         # line_following.follow_line()
         # wait(config.MAIN_LOOP_WAIT_MS)
 
