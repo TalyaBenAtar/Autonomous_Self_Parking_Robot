@@ -15,11 +15,11 @@ def drive(left_speed, right_speed):
 
 
 def drive_forward(speed=config.DRIVE_SPEED):
-    drive(-speed, -speed)
+    drive(speed, speed)
 
 
 def drive_backward(speed=config.DRIVE_SPEED):
-    drive(speed, speed)
+    drive(-speed, -speed)
 
 
 def reset_gyro(angle=0):
@@ -34,8 +34,8 @@ def drive_straight_with_gyro(speed=config.DRIVE_SPEED):
 
     angle = hardware.gyro_sensor.angle()
 
-    left_speed = -speed + angle
-    right_speed = -speed - angle
+    left_speed = speed + angle
+    right_speed = speed - angle
 
     drive(left_speed, right_speed)
 
@@ -64,11 +64,11 @@ def turn_in_place_with_gyro(angle, speed=config.TURN_SPEED):
     reset_gyro(0)
 
     if angle > 0:
-        left_speed = -speed
-        right_speed = speed
-    else:
         left_speed = speed
         right_speed = -speed
+    else:
+        left_speed = -speed
+        right_speed = speed
 
     while abs(hardware.gyro_sensor.angle()) < abs(angle):
         drive(left_speed, right_speed)
@@ -94,8 +94,8 @@ def turn_in_place_with_motors(angle, speed=config.TURN_SPEED):
         left_degrees = -motor_degrees
         right_degrees = motor_degrees
 
-    hardware.left_motor.run_angle(-speed, left_degrees, wait=False)
-    hardware.right_motor.run_angle(-speed, right_degrees, wait=True)
+    hardware.left_motor.run_angle(speed, left_degrees, wait=False)
+    hardware.right_motor.run_angle(speed, right_degrees, wait=True)
 
     stop_robot()
     wait(200)

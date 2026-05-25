@@ -66,8 +66,8 @@ def follow_line():
     reflection = read_line_reflection()
     correction = calculate_line_correction(reflection)
 
-    left_speed = -config.DRIVE_SPEED + correction
-    right_speed = -config.DRIVE_SPEED - correction
+    left_speed = config.DRIVE_SPEED + correction
+    right_speed = config.DRIVE_SPEED - correction
 
     print("ref:", reflection, "corr:", correction, "L:", left_speed, "R:", right_speed)
 
