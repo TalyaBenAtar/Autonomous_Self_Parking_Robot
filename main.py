@@ -31,9 +31,9 @@ def main():
     # line_following.test_color_sensor()
 
     gap_reading_count = 0
-    line_following.prepare_line_following()
-    state = RobotState.LINE_FOLLOWING
-    print("STATE:", state)
+    # line_following.prepare_line_following()
+    # state = RobotState.LINE_FOLLOWING
+    # print("STATE:", state)
 
     state = RobotState.PARKING_SPOT_DETECTION
     print("STATE:", state)
@@ -73,13 +73,18 @@ def main():
             print("Gap length:", gap_length)
 
             if parking_type == parking_spot_detection.ParkingType.TOO_SMALL:
-                print("Gap too small, returning to line following")
+                print("Gap too small, searching for another gap")
 
-                gap_reading_count = 0
-                line_following.prepare_line_following()
-                state = RobotState.LINE_FOLLOWING
+                state = RobotState.PARKING_SPOT_DETECTION
                 print("STATE:", state)
-                wait(2000)
+                wait(500)
+                # print("Gap too small, returning to line following")
+
+                # gap_reading_count = 0
+                # line_following.prepare_line_following()
+                # state = RobotState.LINE_FOLLOWING
+                # print("STATE:", state)
+                # wait(2000)
 
             elif parking_type == parking_spot_detection.ParkingType.UNKNOWN:
                 print("No valid parking spot found, stopping safely")

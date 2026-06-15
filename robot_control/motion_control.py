@@ -26,30 +26,50 @@ def reset_gyro(angle=0):
     hardware.gyro_sensor.reset_angle(angle)
 
 
+# def drive_straight_with_gyro(speed=config.DRIVE_SPEED):
+#     """
+#     Drives straight using the gyro angle as correction.
+#     Call reset_gyro() before starting a straight driving section.
+#     """
+
+#     angle = hardware.gyro_sensor.angle()
+
+#     left_speed = speed + angle
+#     right_speed = speed - angle
+
+#     drive(left_speed, right_speed)
+
 def drive_straight_with_gyro(speed=config.DRIVE_SPEED):
-    """
-    Drives straight using the gyro angle as correction.
-    Call reset_gyro() before starting a straight driving section.
-    """
-
     angle = hardware.gyro_sensor.angle()
+    correction = angle * 2
 
-    left_speed = speed + angle
-    right_speed = speed - angle
+    left_speed = speed - correction
+    right_speed = speed + correction
 
     drive(left_speed, right_speed)
 
 
+# def reverse_straight_with_gyro(speed=config.DRIVE_SPEED):
+#     """
+#     Reverses straight using the gyro angle as correction.
+#     Call reset_gyro() before starting a reversing section.
+#     """
+
+#     angle = hardware.gyro_sensor.angle()
+
+#     left_speed = speed - angle
+#     right_speed = speed + angle
+
+#     drive(left_speed, right_speed)
+
 def reverse_straight_with_gyro(speed=config.DRIVE_SPEED):
-    """
-    Reverses straight using the gyro angle as correction.
-    Call reset_gyro() before starting a reversing section.
-    """
-
     angle = hardware.gyro_sensor.angle()
+    correction = angle
+    # correction = angle * 2
 
-    left_speed = speed - angle
-    right_speed = speed + angle
+
+    left_speed = -speed + correction
+    right_speed = -speed - correction
 
     drive(left_speed, right_speed)
 
