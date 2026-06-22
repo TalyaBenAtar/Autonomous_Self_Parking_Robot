@@ -41,7 +41,7 @@ def reset_gyro(angle=0):
 
 def drive_straight_with_gyro(speed=config.DRIVE_SPEED):
     angle = hardware.gyro_sensor.angle()
-    correction = angle * 2
+    correction = angle * 3
 
     left_speed = speed - correction
     right_speed = speed + correction
@@ -64,7 +64,7 @@ def drive_straight_with_gyro(speed=config.DRIVE_SPEED):
 
 def reverse_straight_with_gyro(speed=config.DRIVE_SPEED):
     angle = hardware.gyro_sensor.angle()
-    correction = angle
+    correction = angle * 3
     # correction = angle * 2
 
 

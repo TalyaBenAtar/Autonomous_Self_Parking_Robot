@@ -14,9 +14,10 @@ def read_rear_distance():
     return hardware.rear_ultrasonic.distance()
 
 
+# def is_rear_safe():
+#     return read_rear_distance() > config.MIN_REAR_DISTANCE_MM
 def is_rear_safe():
-    return read_rear_distance() > config.MIN_REAR_DISTANCE_MM
-
+    return read_filtered_rear_distance() > config.MIN_REAR_DISTANCE_MM
 
 def stop_if_too_close():
     if not is_rear_safe():
@@ -46,24 +47,60 @@ def calculate_side_correction(target_side_distance):
     return correction
 
 
+def is_valid_distance(distance):
+    return 20 < distance < 1000
+
+
+# def read_filtered_rear_distance():
+#     total = 0
+
+#     for _ in range(config.ULTRASONIC_FILTER_SAMPLES):
+#         total += read_rear_distance()
+#         wait(config.ULTRASONIC_FILTER_WAIT_MS)
+
+#     return total / config.ULTRASONIC_FILTER_SAMPLES
 def read_filtered_rear_distance():
-    total = 0
+    readings = []
 
     for _ in range(config.ULTRASONIC_FILTER_SAMPLES):
-        total += read_rear_distance()
+        distance = read_rear_distance()
+
+        if is_valid_distance(distance):
+            readings.append(distance)
+
         wait(config.ULTRASONIC_FILTER_WAIT_MS)
 
-    return total / config.ULTRASONIC_FILTER_SAMPLES
+    if len(readings) == 0:
+        return 2550
+
+    readings.sort()
+    return readings[len(readings) // 2]
 
 
+# def read_filtered_side_distance():
+#     total = 0
+
+#     for _ in range(config.ULTRASONIC_FILTER_SAMPLES):
+#         total += read_side_distance()
+#         wait(config.ULTRASONIC_FILTER_WAIT_MS)
+
+#     return total / config.ULTRASONIC_FILTER_SAMPLES
 def read_filtered_side_distance():
-    total = 0
+    readings = []
 
     for _ in range(config.ULTRASONIC_FILTER_SAMPLES):
-        total += read_side_distance()
+        distance = read_side_distance()
+
+        if is_valid_distance(distance):
+            readings.append(distance)
+
         wait(config.ULTRASONIC_FILTER_WAIT_MS)
 
-    return total / config.ULTRASONIC_FILTER_SAMPLES
+    if len(readings) == 0:
+        return 2550
+
+    readings.sort()
+    return readings[len(readings) // 2]
 
 
 def reverse_with_side_alignment(target_side_distance, speed=config.PARKING_SPEED):
@@ -97,6 +134,7 @@ def reverse_until_rear_distance_with_side_alignment(
 ):
     motion_control.reset_drive_motors()
     motion_control.reset_gyro()
+    wait(200)
 
     while (
         read_filtered_rear_distance() > rear_target_distance
@@ -124,6 +162,7 @@ def reverse_straight_until_rear_distance(
 ):
     motion_control.reset_drive_motors()
     motion_control.reset_gyro()
+    wait(200)
 
     while (
         read_filtered_rear_distance() > rear_target_distance
@@ -157,6 +196,7 @@ def drive_forward_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
 
     motion_control.reset_drive_motors()
     motion_control.reset_gyro()
+    wait(200)
 
     while motion_control.average_motor_angle() < target_angle:
         motion_control.drive_straight_with_gyro(speed)
@@ -185,6 +225,7 @@ def drive_forward_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
 #     return True
 
 
+# Perform the parking maneuver based on the detected parking type
 def perform_parking(parking_type, gap_length):
     if parking_type == ParkingType.VERTICAL:
         return perform_vertical_parking(gap_length)
@@ -197,23 +238,69 @@ def perform_parking(parking_type, gap_length):
     return False
 
 
+# Perform vertical parking
+# def perform_vertical_parking(gap_length):
+#     """
+#     Vertical parking:
+#     1. Move slightly forward to align with the spot.
+#     2. Turn 90 degrees into the spot.
+#     3. Reverse straight using gyro.
+#     4. Stop using rear ultrasonic.
+#     5. Safety check.
+#     """
+
+#     hardware.ev3.speaker.beep()
+#     print("Performing vertical parking")
+
+#     drive_forward_for_motor_angle(config.VERTICAL_ENTRY_FORWARD_ANGLE)
+
+#     motion_control.turn_in_place_with_gyro(-90)
+
+#     success = reverse_straight_until_rear_distance(
+#         config.VERTICAL_PARKING_REAR_TARGET_MM,
+#         config.MAX_VERTICAL_REVERSE_ANGLE
+#     )
+
+#     motion_control.stop_robot()
+
+#     if not success:
+#         print("Vertical parking failed during reverse")
+#         return False
+
+#     return True
+#     # return final_safety_check()
+
+
 def perform_vertical_parking(gap_length):
     """
     Vertical parking:
-    1. Move slightly forward to align with the spot.
-    2. Turn 90 degrees into the spot.
-    3. Reverse straight using gyro.
-    4. Stop using rear ultrasonic.
-    5. Safety check.
+    1. Move a little bit straight backwards.
+    2. Wait.
+    3. Turn -90 degrees toward the parking spot.
+    4. Wait.
+    5. Drive backwards straight until parked.
     """
 
     hardware.ev3.speaker.beep()
     print("Performing vertical parking")
 
-    drive_forward_for_motor_angle(config.VERTICAL_ENTRY_FORWARD_ANGLE)
+    # Step 1: move a little bit backwards before turning
+    success = reverse_straight_for_motor_angle(
+        config.VERTICAL_ENTRY_BACKUP_ANGLE
+    )
 
-    motion_control.turn_in_place_with_gyro(90)
+    if not success:
+        print("Vertical parking failed during initial backup")
+        return False
 
+    wait(200)
+
+    # Step 2: turn toward the parking spot
+    motion_control.turn_in_place_with_gyro(-40)
+
+    wait(200)
+
+    # Step 3: reverse straight into the parking spot
     success = reverse_straight_until_rear_distance(
         config.VERTICAL_PARKING_REAR_TARGET_MM,
         config.MAX_VERTICAL_REVERSE_ANGLE
@@ -222,15 +309,16 @@ def perform_vertical_parking(gap_length):
     motion_control.stop_robot()
 
     if not success:
-        print("Vertical parking failed during reverse")
+        print("Vertical parking failed during final reverse")
         return False
 
     return True
-    # return final_safety_check()
 
 
+# Reverse in a curve for a certain motor angle, while checking rear distance for safety
 def reverse_curve_for_motor_angle(max_motor_angle, speed=config.PARKING_SPEED):
     motion_control.reset_drive_motors()
+    wait(200)
 
     while motion_control.average_motor_angle() < max_motor_angle:
         if stop_if_too_close():
@@ -254,9 +342,11 @@ def reverse_curve_for_motor_angle(max_motor_angle, speed=config.PARKING_SPEED):
     return True
 
 
+# Reverse straight for a certain motor angle, while checking rear distance for safety
 def reverse_straight_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
     motion_control.reset_drive_motors()
     motion_control.reset_gyro()
+    wait(200)
 
     while motion_control.average_motor_angle() < target_angle:
         if stop_if_too_close():
@@ -275,6 +365,7 @@ def reverse_straight_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
     return True
 
 
+# Perform parallel parking
 def perform_parallel_parking(gap_length):
     hardware.ev3.speaker.beep()
     print("Performing parallel parking")

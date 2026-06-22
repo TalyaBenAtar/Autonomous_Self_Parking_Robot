@@ -8,7 +8,7 @@ ev3 = EV3Brick()
 
 # Sensors
 gyro_sensor = GyroSensor(Port.S1)
-color_sensor = ColorSensor(Port.S2)
+# color_sensor = ColorSensor(Port.S2)
 side_ultrasonic = UltrasonicSensor(Port.S3)
 rear_ultrasonic = UltrasonicSensor(Port.S4)
 

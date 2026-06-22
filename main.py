@@ -30,6 +30,7 @@ def main():
     # line_following.follow_line_for_testing()
     # line_following.test_color_sensor()
 
+
     gap_reading_count = 0
     # line_following.prepare_line_following()
     # state = RobotState.LINE_FOLLOWING
