@@ -190,6 +190,27 @@ def reverse_straight_until_rear_distance(
     return True
 
 
+def reverse_plain_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
+    motion_control.reset_drive_motors()
+    wait(200)
+
+    while motion_control.average_motor_angle() < target_angle:
+        if stop_if_too_close():
+            return False
+
+        motion_control.drive(-speed, -speed)
+
+        print(
+            "plain reverse motor:", motion_control.average_motor_angle(),
+            "rear:", read_filtered_rear_distance()
+        )
+
+        wait(config.MAIN_LOOP_WAIT_MS)
+
+    motion_control.stop_robot()
+    return True
+
+
 def drive_forward_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
     if target_angle > config.MAX_FORWARD_ENTRY_ANGLE:
         target_angle = config.MAX_FORWARD_ENTRY_ANGLE
@@ -296,15 +317,16 @@ def perform_vertical_parking(gap_length):
     wait(200)
 
     # Step 2: turn toward the parking spot
-    motion_control.turn_in_place_with_gyro(-40)
+    motion_control.turn_in_place_with_gyro(-70)
 
     wait(200)
 
     # Step 3: reverse straight into the parking spot
-    success = reverse_straight_until_rear_distance(
-        config.VERTICAL_PARKING_REAR_TARGET_MM,
-        config.MAX_VERTICAL_REVERSE_ANGLE
-    )
+    # success = reverse_straight_until_rear_distance(
+    #     config.VERTICAL_PARKING_REAR_TARGET_MM,
+    #     config.MAX_VERTICAL_REVERSE_ANGLE
+    # )
+    success = reverse_plain_for_motor_angle(180)
 
     motion_control.stop_robot()
 
@@ -365,50 +387,131 @@ def reverse_straight_for_motor_angle(target_angle, speed=config.PARKING_SPEED):
     return True
 
 
+def reverse_plain_until_rear_distance(rear_target_distance, max_motor_angle, speed=config.PARKING_SPEED):
+    motion_control.reset_drive_motors()
+    wait(200)
+
+    while (
+        read_filtered_rear_distance() > rear_target_distance
+        and motion_control.average_motor_angle() < max_motor_angle
+    ):
+        if stop_if_too_close():
+            return False
+
+        motion_control.drive(-speed, -speed)
+
+        print(
+            "plain reverse rear:", read_filtered_rear_distance(),
+            "motor:", motion_control.average_motor_angle()
+        )
+
+        wait(config.MAIN_LOOP_WAIT_MS)
+
+    motion_control.stop_robot()
+
+    if motion_control.average_motor_angle() >= max_motor_angle:
+        print("STOP: plain reverse max motor angle reached")
+        return False
+
+    return True
+
+
 # Perform parallel parking
 def perform_parallel_parking(gap_length):
     hardware.ev3.speaker.beep()
     print("Performing parallel parking")
 
-    # Step 1: back up straight to better entry position
-    success = reverse_straight_for_motor_angle(
+    # Step 1: move a little backwards straight
+    success = reverse_plain_for_motor_angle(
         config.PARALLEL_BACKUP_BEFORE_TURN_ANGLE
     )
 
     if not success:
-        print("Parallel parking failed during straight backup")
+        print("Parallel parking failed during first backup")
         return False
 
     wait(200)
 
-    # Step 2: angle toward the parking spot
+    # Step 2: turn toward the parking spot on the right
     motion_control.turn_in_place_with_gyro(config.PARALLEL_FIRST_TURN_ANGLE)
 
-    wait(300)
+    wait(200)
 
-    # Step 3: back up more after turning, before curving
-    print("Step 3: angled straight backup")
-    success = reverse_straight_for_motor_angle(
+    # Step 3: reverse straight until close to the back/right wall
+    success = reverse_plain_until_rear_distance(
+        config.PARALLEL_TURN_TRIGGER_REAR_MM,
         config.PARALLEL_BACKUP_BEFORE_REVERSE_ANGLE
     )
 
     if not success:
-        print("Parallel parking failed during angled straight backup")
+        print("Parallel parking failed before second turn")
         return False
 
     wait(200)
 
+    # Step 4: turn a little left to straighten
+    motion_control.turn_in_place_with_gyro(config.PARALLEL_SECOND_TURN_ANGLE)
 
-    # Step 4: reverse curve into the spot
-    success = reverse_curve_for_motor_angle(
-        config.MAX_PARALLEL_FIRST_REVERSE_ANGLE
+    wait(200)
+
+    # Step 5: reverse straight until final back wall
+    success = reverse_plain_until_rear_distance(
+        config.PARALLEL_FINAL_REAR_TARGET_MM,
+        config.MAX_PARALLEL_FINAL_REVERSE_ANGLE
     )
 
     motion_control.stop_robot()
 
     if not success:
-        print("Parallel parking failed during reverse curve")
+        print("Parallel parking failed during final reverse")
         return False
 
-    # return final_safety_check()
     return True
+
+
+# def perform_parallel_parking(gap_length):
+#     hardware.ev3.speaker.beep()
+#     print("Performing parallel parking")
+
+#     # Step 1: back up straight to better entry position
+#     success = reverse_straight_for_motor_angle(
+#         config.PARALLEL_BACKUP_BEFORE_TURN_ANGLE
+#     )
+
+#     if not success:
+#         print("Parallel parking failed during straight backup")
+#         return False
+
+#     wait(200)
+
+#     # Step 2: angle toward the parking spot
+#     motion_control.turn_in_place_with_gyro(config.PARALLEL_FIRST_TURN_ANGLE)
+
+#     wait(300)
+
+#     # Step 3: back up more after turning, before curving
+#     print("Step 3: angled straight backup")
+#     success = reverse_straight_for_motor_angle(
+#         config.PARALLEL_BACKUP_BEFORE_REVERSE_ANGLE
+#     )
+
+#     if not success:
+#         print("Parallel parking failed during angled straight backup")
+#         return False
+
+#     wait(200)
+
+
+#     # Step 4: reverse curve into the spot
+#     success = reverse_curve_for_motor_angle(
+#         config.MAX_PARALLEL_FIRST_REVERSE_ANGLE
+#     )
+
+#     motion_control.stop_robot()
+
+#     if not success:
+#         print("Parallel parking failed during reverse curve")
+#         return False
+
+#     # return final_safety_check()
+#     return True

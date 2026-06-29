@@ -113,10 +113,3 @@ def main():
 
 main()
 
-
-# idea:
-# i think a better solution is to detect with the color sensor 
-# that we are not on th line and use the gyro to angle us back on it,
-#  cause if we move off the line the color sensor wont help guide us back
-#   to the line cause it doesnt know where the line is. 
-#   we need to reset gyro at the start of the drive once we detect a line for that too
